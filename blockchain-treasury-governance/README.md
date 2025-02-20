@@ -12,10 +12,13 @@ A secure and transparent smart contract for managing community funds through dec
 
 ## Key Parameters
 
-- Voting Duration: 10,000 blocks
-- Required Proposal Deposit: 1,000,000 microSTX
-- Minimum Votes for Quorum: 500 votes
-- Minimum Approval Percentage: 51% (510/1000)
+- Voting Duration: 10,000 blocks (`VOTING_DURATION_BLOCKS`)
+- Required Proposal Deposit: 1,000,000 microSTX (`REQUIRED_PROPOSAL_DEPOSIT`)
+- Minimum Votes for Quorum: 500 votes (`MINIMUM_VOTES_FOR_QUORUM`)
+- Minimum Approval Percentage: 51% (510/1000) (`MINIMUM_APPROVAL_PERCENTAGE`)
+- Proposal Cooldown: 1,000 blocks (`PROPOSAL_COOLDOWN_BLOCKS`)
+- Minimum Proposal Amount: 100,000 microSTX (`MINIMUM_PROPOSAL_AMOUNT`)
+- Timelock Period: 144 blocks (~24 hours) (`TIMELOCK_PERIOD_BLOCKS`)
 
 ## Functions
 
@@ -38,7 +41,11 @@ A secure and transparent smart contract for managing community funds through dec
    - One vote per member per proposal
    - Must vote within voting period
 
-4. `process-approved-proposal(proposal-id)`
+4. `cancel-proposal(proposal-id)`
+   - Allows proposal creator to cancel an active proposal
+   - Returns deposit to the creator
+
+5. `process-approved-proposal(proposal-id)`
    - Executes approved proposals
    - Transfers funds to recipient
    - Returns proposal deposit to creator
@@ -57,6 +64,12 @@ A secure and transparent smart contract for managing community funds through dec
 4. `get-member-deposit-amount(member-address)`
    - Returns total deposits made by a member
 
+5. `check-proposal-quorum(proposal-id)`
+   - Checks if a proposal has reached quorum
+
+6. `is-proposal-executable(proposal-id)`
+   - Checks if a proposal can be executed
+
 ### Admin Functions
 
 1. `update-admin-address(new-admin-address)`
@@ -69,16 +82,20 @@ A secure and transparent smart contract for managing community funds through dec
 
 ## Error Codes
 
-- `ERROR-NOT-AUTHORIZED (u100)`: Unauthorized access attempt
-- `ERROR-TREASURY-BALANCE-TOO-LOW (u101)`: Insufficient treasury funds
-- `ERROR-INVALID-AMOUNT (u102)`: Invalid transaction amount
-- `ERROR-PROPOSAL-NOT-FOUND (u103)`: Proposal ID doesn't exist
-- `ERROR-DUPLICATE-VOTE (u104)`: Member already voted
-- `ERROR-VOTING-PERIOD-EXPIRED (u105)`: Proposal voting period ended
-- `ERROR-INSUFFICIENT-PROPOSAL-DEPOSIT (u106)`: Inadequate proposal deposit
-- `ERROR-INVALID-RECIPIENT-ADDRESS (u107)`: Invalid recipient address
-- `ERROR-INVALID-PROPOSAL-DESCRIPTION (u108)`: Invalid proposal description
-- `ERROR-INVALID-ADMIN-ADDRESS (u109)`: Invalid admin address
+- `ERR_NOT_AUTHORIZED (u100)`: Unauthorized access attempt
+- `ERR_TREASURY_BALANCE_TOO_LOW (u101)`: Insufficient treasury funds
+- `ERR_INVALID_AMOUNT (u102)`: Invalid transaction amount
+- `ERR_PROPOSAL_NOT_FOUND (u103)`: Proposal ID doesn't exist
+- `ERR_DUPLICATE_VOTE (u104)`: Member already voted
+- `ERR_VOTING_PERIOD_EXPIRED (u105)`: Proposal voting period ended
+- `ERR_INSUFFICIENT_PROPOSAL_DEPOSIT (u106)`: Inadequate proposal deposit
+- `ERR_INVALID_RECIPIENT_ADDRESS (u107)`: Invalid recipient address
+- `ERR_INVALID_PROPOSAL_DESCRIPTION (u108)`: Invalid proposal description
+- `ERR_INVALID_ADMIN_ADDRESS (u109)`: Invalid admin address
+- `ERR_PROPOSAL_IN_COOLDOWN (u110)`: Cannot create proposal during cooldown period
+- `ERR_PROPOSAL_IN_TIMELOCK (u111)`: Proposal is in timelock period
+- `ERR_BELOW_MINIMUM_PROPOSAL_AMOUNT (u112)`: Proposal amount below minimum
+- `ERR_CANNOT_CANCEL (u113)`: Cannot cancel proposal
 
 ## Security Features
 
@@ -98,7 +115,15 @@ A secure and transparent smart contract for managing community funds through dec
    - Prevents self-dealing
    - Validates recipient addresses
 
-5. Admin Controls
+5. Timelock Period
+   - 24-hour waiting period after approval before execution
+   - Provides time for community to react to approved proposals
+
+6. Proposal Cooldown
+   - Limits frequency of proposal creation
+   - Prevents flooding the system
+
+7. Admin Controls
    - Emergency withdrawal capability
    - Admin address management
 
@@ -125,3 +150,10 @@ A secure and transparent smart contract for managing community funds through dec
 3. Ensure proposal descriptions are clear and concise
 4. Monitor voting periods for timely participation
 5. Verify recipient addresses carefully
+
+## Recent Updates
+
+- **Code Style Improvements**: Updated constant naming to follow Clarity convention
+  - Changed all constant names to use `SCREAMING_SNAKE_CASE` instead of kebab-case
+  - Renamed error constants from `ERROR-*` to `ERR_*` to follow Clarity naming best practices
+  - Updated all references to constants throughout the contract

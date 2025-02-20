@@ -1,35 +1,35 @@
 ;; Community Treasury Smart Contract
 
 ;; Error codes
-(define-constant ERROR-NOT-AUTHORIZED (err u100))
-(define-constant ERROR-TREASURY-BALANCE-TOO-LOW (err u101))
-(define-constant ERROR-INVALID-AMOUNT (err u102))
-(define-constant ERROR-PROPOSAL-NOT-FOUND (err u103))
-(define-constant ERROR-DUPLICATE-VOTE (err u104))
-(define-constant ERROR-VOTING-PERIOD-EXPIRED (err u105))
-(define-constant ERROR-INSUFFICIENT-PROPOSAL-DEPOSIT (err u106))
-(define-constant ERROR-INVALID-RECIPIENT-ADDRESS (err u107))
-(define-constant ERROR-INVALID-PROPOSAL-DESCRIPTION (err u108))
-(define-constant ERROR-INVALID-ADMIN-ADDRESS (err u109))
-(define-constant ERROR-PROPOSAL-IN-COOLDOWN (err u110))
-(define-constant ERROR-PROPOSAL-IN-TIMELOCK (err u111))
-(define-constant ERROR-BELOW-MINIMUM-PROPOSAL-AMOUNT (err u112))
-(define-constant ERROR-CANNOT-CANCEL (err u113))
+(define-constant ERR_NOT_AUTHORIZED (err u100))
+(define-constant ERR_TREASURY_BALANCE_TOO_LOW (err u101))
+(define-constant ERR_INVALID_AMOUNT (err u102))
+(define-constant ERR_PROPOSAL_NOT_FOUND (err u103))
+(define-constant ERR_DUPLICATE_VOTE (err u104))
+(define-constant ERR_VOTING_PERIOD_EXPIRED (err u105))
+(define-constant ERR_INSUFFICIENT_PROPOSAL_DEPOSIT (err u106))
+(define-constant ERR_INVALID_RECIPIENT_ADDRESS (err u107))
+(define-constant ERR_INVALID_PROPOSAL_DESCRIPTION (err u108))
+(define-constant ERR_INVALID_ADMIN_ADDRESS (err u109))
+(define-constant ERR_PROPOSAL_IN_COOLDOWN (err u110))
+(define-constant ERR_PROPOSAL_IN_TIMELOCK (err u111))
+(define-constant ERR_BELOW_MINIMUM_PROPOSAL_AMOUNT (err u112))
+(define-constant ERR_CANNOT_CANCEL (err u113))
 
 ;; Constants
-(define-constant VOTING-DURATION-BLOCKS u10000)
-(define-constant REQUIRED-PROPOSAL-DEPOSIT u1000000)
-(define-constant MINIMUM-VOTES-FOR-QUORUM u500)
-(define-constant MINIMUM-APPROVAL-PERCENTAGE u510)
-(define-constant PROPOSAL-COOLDOWN-BLOCKS u1000)
-(define-constant MINIMUM-PROPOSAL-AMOUNT u100000)
-(define-constant TIMELOCK-PERIOD-BLOCKS u144) ;; ~24 hours in blocks
-(define-constant EVENT-TYPE-PROPOSAL-CREATED u1)
-(define-constant EVENT-TYPE-VOTE-CAST u2)
-(define-constant EVENT-TYPE-PROPOSAL-EXECUTED u3)
-(define-constant EVENT-TYPE-PROPOSAL-CANCELLED u4)
-(define-constant EVENT-TYPE-FUNDS-DEPOSITED u5)
-(define-constant EVENT-TYPE-EMERGENCY-WITHDRAWAL u6)
+(define-constant VOTING_DURATION_BLOCKS u10000)
+(define-constant REQUIRED_PROPOSAL_DEPOSIT u1000000)
+(define-constant MINIMUM_VOTES_FOR_QUORUM u500)
+(define-constant MINIMUM_APPROVAL_PERCENTAGE u510)
+(define-constant PROPOSAL_COOLDOWN_BLOCKS u1000)
+(define-constant MINIMUM_PROPOSAL_AMOUNT u100000)
+(define-constant TIMELOCK_PERIOD_BLOCKS u144) ;; ~24 hours in blocks
+(define-constant EVENT_TYPE_PROPOSAL_CREATED u1)
+(define-constant EVENT_TYPE_VOTE_CAST u2)
+(define-constant EVENT_TYPE_PROPOSAL_EXECUTED u3)
+(define-constant EVENT_TYPE_PROPOSAL_CANCELLED u4)
+(define-constant EVENT_TYPE_FUNDS_DEPOSITED u5)
+(define-constant EVENT_TYPE_EMERGENCY_WITHDRAWAL u6)
 
 ;; Data vars
 (define-data-var treasury-balance uint u0)
@@ -102,7 +102,7 @@
     )
     (and
         (check-proposal-quorum proposal-id)
-        (>= current-block (+ (get execution-block proposal-data) TIMELOCK-PERIOD-BLOCKS))
+        (>= current-block (+ (get execution-block proposal-data) TIMELOCK_PERIOD_BLOCKS))
         (not (get is-executed proposal-data))
         (not (get is-cancelled proposal-data))
     ))
@@ -116,7 +116,7 @@
     )
     (and
         (>= current-block-height (get creation-block-height proposal-data))
-        (< current-block-height (+ (get creation-block-height proposal-data) VOTING-DURATION-BLOCKS))
+        (< current-block-height (+ (get creation-block-height proposal-data) VOTING_DURATION_BLOCKS))
         (not (get is-executed proposal-data))
         (not (get is-cancelled proposal-data))
     ))
@@ -127,8 +127,8 @@
         (total-votes (+ yes-votes no-votes))
     )
     (and
-        (>= total-votes MINIMUM-VOTES-FOR-QUORUM)
-        (>= (* yes-votes u1000) (* MINIMUM-APPROVAL-PERCENTAGE total-votes))
+        (>= total-votes MINIMUM_VOTES_FOR_QUORUM)
+        (>= (* yes-votes u1000) (* MINIMUM_APPROVAL_PERCENTAGE total-votes))
     ))
 )
 
@@ -157,11 +157,11 @@
         (previous-deposit (get-member-deposit-amount tx-sender))
     )
     (begin
-        (asserts! (> deposit-amount u0) ERROR-INVALID-AMOUNT)
+        (asserts! (> deposit-amount u0) ERR_INVALID_AMOUNT)
         (try! (stx-transfer? deposit-amount tx-sender (as-contract tx-sender)))
         (var-set treasury-balance (+ (var-get treasury-balance) deposit-amount))
         (map-set member-deposits tx-sender (+ previous-deposit deposit-amount))
-        (emit-event EVENT-TYPE-FUNDS-DEPOSITED u0 tx-sender)
+        (emit-event EVENT_TYPE_FUNDS_DEPOSITED u0 tx-sender)
         (ok deposit-amount)
     ))
 )
@@ -173,14 +173,14 @@
     )
     (begin
         ;; Input validation
-        (asserts! (is-recipient-valid recipient-address) ERROR-INVALID-RECIPIENT-ADDRESS)
-        (asserts! (is-description-valid proposal-text) ERROR-INVALID-PROPOSAL-DESCRIPTION)
-        (asserts! (>= withdrawal-amount MINIMUM-PROPOSAL-AMOUNT) ERROR-BELOW-MINIMUM-PROPOSAL-AMOUNT)
-        (asserts! (<= withdrawal-amount (var-get treasury-balance)) ERROR-TREASURY-BALANCE-TOO-LOW)
-        (asserts! (> (- current-block (var-get last-proposal-block)) PROPOSAL-COOLDOWN-BLOCKS) ERROR-PROPOSAL-IN-COOLDOWN)
+        (asserts! (is-recipient-valid recipient-address) ERR_INVALID_RECIPIENT_ADDRESS)
+        (asserts! (is-description-valid proposal-text) ERR_INVALID_PROPOSAL_DESCRIPTION)
+        (asserts! (>= withdrawal-amount MINIMUM_PROPOSAL_AMOUNT) ERR_BELOW_MINIMUM_PROPOSAL_AMOUNT)
+        (asserts! (<= withdrawal-amount (var-get treasury-balance)) ERR_TREASURY_BALANCE_TOO_LOW)
+        (asserts! (> (- current-block (var-get last-proposal-block)) PROPOSAL_COOLDOWN_BLOCKS) ERR_PROPOSAL_IN_COOLDOWN)
         
         ;; Process deposit
-        (try! (stx-transfer? REQUIRED-PROPOSAL-DEPOSIT tx-sender (as-contract tx-sender)))
+        (try! (stx-transfer? REQUIRED_PROPOSAL_DEPOSIT tx-sender (as-contract tx-sender)))
         
         ;; Create proposal
         (map-set active-proposals proposal-id {
@@ -193,24 +193,24 @@
             creation-block-height: current-block,
             is-executed: false,
             is-cancelled: false,
-            deposit-amount: REQUIRED-PROPOSAL-DEPOSIT,
+            deposit-amount: REQUIRED_PROPOSAL_DEPOSIT,
             execution-block: current-block
         })
         
         (var-set proposal-counter (+ proposal-id u1))
         (var-set last-proposal-block current-block)
-        (emit-event EVENT-TYPE-PROPOSAL-CREATED proposal-id tx-sender)
+        (emit-event EVENT_TYPE_PROPOSAL_CREATED proposal-id tx-sender)
         (ok proposal-id)
     ))
 )
 
 (define-public (vote-on-proposal (proposal-id uint) (vote-in-favor bool))
     (let (
-        (proposal-data (unwrap! (get-proposal-info proposal-id) ERROR-PROPOSAL-NOT-FOUND))
+        (proposal-data (unwrap! (get-proposal-info proposal-id) ERR_PROPOSAL_NOT_FOUND))
     )
     (begin
-        (asserts! (is-voting-period-active proposal-id) ERROR-VOTING-PERIOD-EXPIRED)
-        (asserts! (not (has-member-voted proposal-id tx-sender)) ERROR-DUPLICATE-VOTE)
+        (asserts! (is-voting-period-active proposal-id) ERR_VOTING_PERIOD_EXPIRED)
+        (asserts! (not (has-member-voted proposal-id tx-sender)) ERR_DUPLICATE_VOTE)
         
         (map-set voter-registry 
             {proposal-id: proposal-id, voter-address: tx-sender} 
@@ -226,19 +226,19 @@
                 (merge proposal-data {no-vote-count: (+ (get no-vote-count proposal-data) u1)}))
         )
         
-        (emit-event EVENT-TYPE-VOTE-CAST proposal-id tx-sender)
+        (emit-event EVENT_TYPE_VOTE_CAST proposal-id tx-sender)
         (ok true)
     ))
 )
 
 (define-public (cancel-proposal (proposal-id uint))
     (let (
-        (proposal-data (unwrap! (get-proposal-info proposal-id) ERROR-PROPOSAL-NOT-FOUND))
+        (proposal-data (unwrap! (get-proposal-info proposal-id) ERR_PROPOSAL_NOT_FOUND))
     )
     (begin
-        (asserts! (is-eq tx-sender (get creator-address proposal-data)) ERROR-NOT-AUTHORIZED)
-        (asserts! (is-voting-period-active proposal-id) ERROR-VOTING-PERIOD-EXPIRED)
-        (asserts! (not (get is-cancelled proposal-data)) ERROR-CANNOT-CANCEL)
+        (asserts! (is-eq tx-sender (get creator-address proposal-data)) ERR_NOT_AUTHORIZED)
+        (asserts! (is-voting-period-active proposal-id) ERR_VOTING_PERIOD_EXPIRED)
+        (asserts! (not (get is-cancelled proposal-data)) ERR_CANNOT_CANCEL)
         
         ;; Return deposit to proposer
         (try! (as-contract (stx-transfer? (get deposit-amount proposal-data)
@@ -249,24 +249,24 @@
         (map-set active-proposals proposal-id 
             (merge proposal-data {is-cancelled: true}))
             
-        (emit-event EVENT-TYPE-PROPOSAL-CANCELLED proposal-id tx-sender)
+        (emit-event EVENT_TYPE_PROPOSAL_CANCELLED proposal-id tx-sender)
         (ok true)
     ))
 )
 
 (define-public (process-approved-proposal (proposal-id uint))
     (let (
-        (proposal-data (unwrap! (get-proposal-info proposal-id) ERROR-PROPOSAL-NOT-FOUND))
+        (proposal-data (unwrap! (get-proposal-info proposal-id) ERR_PROPOSAL_NOT_FOUND))
     )
     (begin
-        (asserts! (not (get is-executed proposal-data)) ERROR-VOTING-PERIOD-EXPIRED)
-        (asserts! (not (get is-cancelled proposal-data)) ERROR-CANNOT-CANCEL)
+        (asserts! (not (get is-executed proposal-data)) ERR_VOTING_PERIOD_EXPIRED)
+        (asserts! (not (get is-cancelled proposal-data)) ERR_CANNOT_CANCEL)
         (asserts! (has-reached-quorum 
             (get yes-vote-count proposal-data) 
             (get no-vote-count proposal-data)) 
-            ERROR-NOT-AUTHORIZED)
-        (asserts! (>= block-height (+ (get execution-block proposal-data) TIMELOCK-PERIOD-BLOCKS))
-            ERROR-PROPOSAL-IN-TIMELOCK)
+            ERR_NOT_AUTHORIZED)
+        (asserts! (>= block-height (+ (get execution-block proposal-data) TIMELOCK_PERIOD_BLOCKS))
+            ERR_PROPOSAL_IN_TIMELOCK)
         
         ;; Execute the transfer
         (try! (as-contract (stx-transfer? (get withdrawal-amount proposal-data) 
@@ -286,7 +286,7 @@
         (map-set active-proposals proposal-id 
             (merge proposal-data {is-executed: true}))
             
-        (emit-event EVENT-TYPE-PROPOSAL-EXECUTED proposal-id tx-sender)
+        (emit-event EVENT_TYPE_PROPOSAL_EXECUTED proposal-id tx-sender)
         (ok true)
     ))
 )
@@ -294,8 +294,8 @@
 ;; Admin functions
 (define-public (update-admin-address (new-admin-address principal))
     (begin
-        (asserts! (is-eq tx-sender (var-get treasury-admin-address)) ERROR-NOT-AUTHORIZED)
-        (asserts! (not (is-eq new-admin-address (as-contract tx-sender))) ERROR-INVALID-ADMIN-ADDRESS)
+        (asserts! (is-eq tx-sender (var-get treasury-admin-address)) ERR_NOT_AUTHORIZED)
+        (asserts! (not (is-eq new-admin-address (as-contract tx-sender))) ERR_INVALID_ADMIN_ADDRESS)
         (var-set treasury-admin-address new-admin-address)
         (ok true)
     ))
@@ -303,12 +303,12 @@
 ;; Emergency functions
 (define-public (emergency-withdrawal)
     (begin
-        (asserts! (is-eq tx-sender (var-get treasury-admin-address)) ERROR-NOT-AUTHORIZED)
-        (asserts! (> (var-get treasury-balance) u0) ERROR-TREASURY-BALANCE-TOO-LOW)
+        (asserts! (is-eq tx-sender (var-get treasury-admin-address)) ERR_NOT_AUTHORIZED)
+        (asserts! (> (var-get treasury-balance) u0) ERR_TREASURY_BALANCE_TOO_LOW)
         (try! (as-contract (stx-transfer? (var-get treasury-balance)
                                   tx-sender
                                   (var-get treasury-admin-address))))
         (var-set treasury-balance u0)
-        (emit-event EVENT-TYPE-EMERGENCY-WITHDRAWAL u0 tx-sender)
+        (emit-event EVENT_TYPE_EMERGENCY_WITHDRAWAL u0 tx-sender)
         (ok true)
     ))
